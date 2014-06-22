@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bitcoin Wallet API (Bitcoin Core) Options</title>
+
+    <!-- build:css styles/main.css -->
+    <link href="styles/main.css" rel="stylesheet">
+    <!-- endbuild -->
+
+    <!-- Bootstrap -->
+    <link href="styles/bootstrap.min.css" rel="stylesheet">
+    <link href="styles/bootstrap-theme.min.css" rel="stylesheet">
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="scripts/jquery.js"></script>
+    <script src="scripts/underscore.js"></script>
+
+    <!-- build:js scripts/options.js -->
+    <script src="scripts/options.js"></script>
+    <!-- endbuild -->
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body style="margin: 10px">
+    <h1>Options</h1>
+
+  <form role="form">
+    <div class="form-group">
+      <label for="username">RPC username</label>
+      <input type="text" class="form-control" id="username" placeholder="Enter username">
+    </div>
+    <div class="form-group">
+      <label for="password">RPC password</label>
+      <input type="password" class="form-control" id="password" placeholder="Password">
+    </div>
+    <div class="form-group">
+      <label for="username">RPC host</label>
+      <input type="text" class="form-control" id="host">
+    </div>
+  </form>
+  <button id="test" class="btn btn-success">Test connection</button>
+
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="scripts/bootstrap.min.js"></script>
+  </body>
+</html>

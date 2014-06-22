@@ -1,0 +1,52 @@
+{
+    "name": "__MSG_appName__",
+    "version": "0.0.1",
+    "manifest_version": 2,
+    "description": "__MSG_appDescription__",
+    "icons": {
+        "16": "images/wallet-btc-api-logo-16.png",
+        "128": "images/wallet-btc-api-logo-128.png"
+    },
+    "default_locale": "en",
+    "permissions": [
+      "tabs",
+      "notifications",
+      "storage"
+    ],
+    "background": {
+        "scripts": [
+            "scripts/jquery.js",
+            "scripts/underscore.js",
+            "scripts/sjcl.js",
+            "scripts/chromereload.js",
+            "scripts/background.js",
+            "scripts/bitcoinjs-min.js",
+            "scripts/bignumber.min.js",
+            "scripts/bitcoin.js"
+        ]
+    },
+    "options_page": "options.html",
+    "content_scripts": [
+        {
+            "matches": [
+                "http://*/*",
+                "https://*/*"
+            ],
+            "css": [
+                "styles/main.css"
+            ],
+            "js": [
+                "scripts/jquery.js",
+                "scripts/underscore.js",
+                "scripts/contentscript.js"
+            ],
+            "run_at": "document_start",
+            "all_frames": false
+        }
+    ],
+    "web_accessible_resources": [
+      "scripts/underscore-min.map",
+      "scripts/jquery.js",
+      "confirm_wallet.html"
+    ]
+}
