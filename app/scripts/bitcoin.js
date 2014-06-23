@@ -86,10 +86,7 @@ chrome.runtime.onConnect.addListener(function(port) {
 
               var tokenInputs = _.map(inputs, function(i) { return {txid: i.txid, vout: i.vout, scriptPubKey: i.scriptPubKey}});
               hash.update({inputs: tokenInputs, outputs: outputs, random: random, expiration: expiration, description: msg.description});
-              var hashed = new Uint8Array(new Int32Array(hash.finalize()).buffer);
-              var token = new Uint8Array(36);
-              token.set(new Uint8Array(new Uint32Array([expiration]).buffer), 0)
-              token.set(hashed, 4)
+              var token = new Uint8Array(new Int32Array(hash.finalize()).buffer);
 
               port.postMessage({id: msg.id, data: {inputs: inputs, outputs: outputs, token: token, expiration: expiration, description: msg.description}});
            }
