@@ -44,7 +44,15 @@ chrome.runtime.onConnect.addListener(function(port) {
 
   if (msg.command && msg.command == 'walletAuthorizeAmount') {
     jsonrpc(msg.id, 'listunspent', [], function(data) {
-          if (window.confirm("Authorize a transaction (" + msg.description + ") for " + msg.amount / 100000000 + "BTC?")) {
+          var expiration;
+
+          if (_.isNull(msg.expiration) || msg.expiration > Date.now() + 3600000) { // more than one hour
+            expiration = Date.now() + 3600000;
+          } else {
+            expiration = msg.expiration;
+          }
+
+          if (window.confirm("Authorize a transaction (" + msg.description + ") for " + msg.amount / 100000000 + "BTC until " + new Date(expiration) + "?")) {
             var toSatoshi = function(i) {
               return (new BigNumber('' + i)).times(100000000).toNumber();
             }
@@ -77,13 +85,13 @@ chrome.runtime.onConnect.addListener(function(port) {
               var outputs = [{value: total - fee - msg.amount, scriptPubKey: Bitcoin.Address.fromBase58Check(inputs[0].address).toOutputScript().toHex()}]
 
               var tokenInputs = _.map(inputs, function(i) { return {txid: i.txid, vout: i.vout, scriptPubKey: i.scriptPubKey}});
-              hash.update({inputs: tokenInputs, outputs: outputs, random: random, expiry: msg.expiry, description: msg.description});
+              hash.update({inputs: tokenInputs, outputs: outputs, random: random, expiration: expiration, description: msg.description});
               var hashed = new Uint8Array(new Int32Array(hash.finalize()).buffer);
               var token = new Uint8Array(36);
-              token.set(new Uint8Array(new Uint32Array([msg.expiry]).buffer), 0)
+              token.set(new Uint8Array(new Uint32Array([expiration]).buffer), 0)
               token.set(hashed, 4)
 
-              port.postMessage({id: msg.id, data: {inputs: inputs, outputs: outputs, token: token, description: msg.description}});
+              port.postMessage({id: msg.id, data: {inputs: inputs, outputs: outputs, token: token, expiration: expiration, description: msg.description}});
            }
           }
         });

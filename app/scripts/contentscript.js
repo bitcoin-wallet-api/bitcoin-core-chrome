@@ -25,16 +25,17 @@ var bitcoin = function() {
       return this;
     }
     Wallet.AUTHORIZATION_DENIED = 101;
-    Wallet.prototype.authorizeAmount = function(amount,expiry,description,successCallback,failureCallback) {
-      msg({command: "walletAuthorizeAmount", amount: amount, expiry: expiry, description: description}, function(data) {
+    Wallet.prototype.authorizeAmount = function(amount,expiration,description,successCallback,failureCallback) {
+      msg({command: "walletAuthorizeAmount", amount: amount, expiration: expiration, description: description}, function(data) {
         if (data.error) {
           failureCallback(data.error);
         } else {
-          successCallback(new TransactionAuthorization(data.token, data.inputs.map(function(i) { return new Input(i); }), data.outputs, data.description));
+          successCallback(new TransactionAuthorization(data.expiration, data.token, data.inputs.map(function(i) { return new Input(i); }), data.outputs, data.description));
         }
       })
     }
-    var TransactionAuthorization = function(token, inputs, outputs, description) {
+    var TransactionAuthorization = function(expiration, token, inputs, outputs, description) {
+      this.expiration = expiration;
       this.token = token;
       this.inputs = inputs;
       this.outputs = outputs;
@@ -42,7 +43,7 @@ var bitcoin = function() {
       return this;
     }
     TransactionAuthorization.prototype.sign = function(tx, successCallback, failureCallback) {
-      msg({command: "walletSignTransaction", tx: tx, token: this.token}, function(data) {
+      msg({command: "walletSignTransaction", tx: tx, token: this.token, inputs: this.inputs, outputs: this.outputs, description: this.description}, function(data) {
         if (data.error) {
           failureCallback(data.error);
         } else {
@@ -51,7 +52,7 @@ var bitcoin = function() {
       })
     }
     TransactionAuthorization.prototype.broadcast = function(tx, successCallback, failureCallback) {
-      msg({command: "walletBroadcastTransaction", tx: tx, token: this.token, description: this.description}, function(data) {
+      msg({command: "walletBroadcastTransaction", tx: tx, token: this.token, inputs: this.inputs, outputs: this.outputs, description: this.description}, function(data) {
         if (data.error) {
           failureCallback(data.error);
         } else {
