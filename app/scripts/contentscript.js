@@ -14,7 +14,6 @@ var bitcoin = function() {
       this.address = i.address;
       this.amount = i.amount;
       this.confirmations = i.confirmations;
-      this.scriptPubKey = i.scriptPubKey;
       this.txid = i.txid;
       this.vout = i.vout;
       return this;
@@ -42,6 +41,8 @@ var bitcoin = function() {
       this.description = description;
       return this;
     }
+    TransactionAuthorization.INVALID_TOKEN = 201;
+    TransactionAuthorization.EXPIRED_TOKEN = 202;
     TransactionAuthorization.prototype.sign = function(tx, successCallback, failureCallback) {
       msg({command: "walletSignTransaction", tx: tx, token: this.token, inputs: this.inputs, outputs: this.outputs, description: this.description}, function(data) {
         if (data.error) {

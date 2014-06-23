@@ -28,6 +28,38 @@ var jsonrpc = function(id, method, params, cb, failure) {
   });
 }
 
+var verifyToken = function(tx, expiration, token, inputs, outputs, description) {
+  var tokenInputs = _.map(inputs, function(i) { return {txid: i.txid, vout: i.vout, address: i.address}});
+  var transaction = Bitcoin.Transaction.fromHex(tx);
+
+  var inputsValidated = 0;
+  transaction.ins.forEach(function(i) {
+    var txid = Array.prototype.reverse.call(i.hash).toString('hex');
+    tokenInputs.forEach(function(ti) {
+      if (ti.txid == txid && ti.vout == i.index) {
+         inputsValidated++;
+      }
+    });
+  });
+
+
+  var outputsValidated = 0;
+  transaction.outs.forEach(function(o) {
+    var scriptPubKey = o.script.toHex();
+    outputs.forEach(function(out) {
+      if (scriptPubKey == out.scriptPubKey && o.value == out.value) {
+         outputsValidated++;
+      }
+    });
+  });
+
+  hash.update({inputs: tokenInputs, outputs: outputs, random: random, expiration: expiration, description: description});
+  var newToken = new Uint8Array(new Int32Array(hash.finalize()).buffer);
+
+  return _.isEqual(new Uint8Array(token), newToken) && inputsValidated == inputs.length && outputsValidated == outputs.length;
+
+}
+
 
 chrome.runtime.onConnect.addListener(function(port) {
   port.onMessage.addListener(function(msg) {
@@ -76,7 +108,7 @@ chrome.runtime.onConnect.addListener(function(port) {
                   if (amount >= (msg.amount + fee)) {
                     return acc
                   } else {
-                    acc.push({txid: i.txid, vout: i.vout, address: i.address, scriptPubKey: i.scriptPubKey, amount: toSatoshi(i.amount), confirmations: i.confirmations})
+                    acc.push({txid: i.txid, vout: i.vout, address: i.address, amount: toSatoshi(i.amount), confirmations: i.confirmations})
                     return acc
                   }
                 }, [])
@@ -84,9 +116,13 @@ chrome.runtime.onConnect.addListener(function(port) {
               var total = _.reduce(inputs, function(acc, i) { return acc + i.amount; }, 0);
               var outputs = [{value: total - fee - msg.amount, scriptPubKey: Bitcoin.Address.fromBase58Check(inputs[0].address).toOutputScript().toHex()}]
 
-              var tokenInputs = _.map(inputs, function(i) { return {txid: i.txid, vout: i.vout, scriptPubKey: i.scriptPubKey}});
+              var tokenInputs = _.map(inputs, function(i) { return {txid: i.txid, vout: i.vout, address: i.address}});
               hash.update({inputs: tokenInputs, outputs: outputs, random: random, expiration: expiration, description: msg.description});
-              var token = new Uint8Array(new Int32Array(hash.finalize()).buffer);
+              var tokenTA = new Uint8Array(new Int32Array(hash.finalize()).buffer);
+              var token = [];
+              for (i=0;i<tokenTA.length;i++) {
+                token[i] = tokenTA[i];
+              }
 
               port.postMessage({id: msg.id, data: {inputs: inputs, outputs: outputs, token: token, expiration: expiration, description: msg.description}});
            }
@@ -96,15 +132,35 @@ chrome.runtime.onConnect.addListener(function(port) {
 
   if (msg.command && msg.command == 'walletSignTransaction') {
     jsonrpc(msg.id, 'signrawtransaction', [msg.tx], function(data) {
+      if (verifyToken(msg.tx, msg.expiration, msg.token, msg.inputs, msg.outputs, msg.description)) {
+        if (Date.now() > msg.expiration) {
+          alert('Expired token, aborted transaction signing');
+          port.postMessage({id: msg.id, data: {error: 202}});
+        } else {
           port.postMessage({id: msg.id, data: data.result.hex});
-        });
+        }
+      } else {
+        alert('Invalid token or transaction, aborted transaction signing');
+        port.postMessage({id: msg.id, data: {error: 201}});
+      }
+    });
   }
 
   if (msg.command && msg.command == 'walletBroadcastTransaction') {
     if (window.confirm("Broadcast transaction (" + msg.description + ") ?"))
     jsonrpc(msg.id, 'sendrawtransaction', [msg.tx], function(data) {
+      if (verifyToken(msg.tx, msg.expiration, msg.token, msg.inputs, msg.outputs, msg.description)) {
+        if (Date.now() > msg.expiration) {
+          alert('Expired token, aborted transaction broadcasting');
+          port.postMessage({id: msg.id, data: {error: 202}});
+        } else {
           port.postMessage({id: msg.id, data: data.result});
-        });
+        }
+      } else {
+        alert('Invalid token or transaction, aborted transaction broadcasting');
+        port.postMessage({id: msg.id, data: {error: 201}});
+      }
+    });
   }
 
   });
