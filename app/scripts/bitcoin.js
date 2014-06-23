@@ -48,6 +48,7 @@ chrome.runtime.onConnect.addListener(function(port) {
             var toSatoshi = function(i) {
               return (new BigNumber('' + i)).times(100000000).toNumber();
             }
+            var fee = 10000;
             var amount =  _.reduce(data.result, function(acc, i) {
               return acc + toSatoshi(i.amount);
             }, 0)
@@ -62,9 +63,9 @@ chrome.runtime.onConnect.addListener(function(port) {
               } else {
                 inputs = _.reduce(data.result, function(acc, i) {
                   var amount =  _.reduce(acc, function(acc, i) {
-                    return acc + toSatoshi(i.amount);
+                    return acc + i.amount;
                   }, 0)
-                  if (amount >= msg.amount) {
+                  if (amount >= (msg.amount + fee)) {
                     return acc
                   } else {
                     acc.push({txid: i.txid, vout: i.vout, address: i.address, scriptPubKey: i.scriptPubKey, amount: toSatoshi(i.amount), confirmations: i.confirmations})
@@ -72,13 +73,17 @@ chrome.runtime.onConnect.addListener(function(port) {
                   }
                 }, [])
               }
-              var fee = 10000;
               var total = _.reduce(inputs, function(acc, i) { return acc + i.amount; }, 0);
-              console.log(data.result, total, fee, msg.amount);
               var outputs = [{value: total - fee - msg.amount, scriptPubKey: Bitcoin.Address.fromBase58Check(inputs[0].address).toOutputScript().toHex()}]
-              hash.update({inputs: inputs, outputs: outputs, random: random});
+
+              var tokenInputs = _.map(inputs, function(i) { return {txid: i.txid, vout: i.vout, scriptPubKey: i.scriptPubKey}});
+              hash.update({inputs: tokenInputs, outputs: outputs, random: random, expiry: msg.expiry, description: msg.description});
               var hashed = new Uint8Array(new Int32Array(hash.finalize()).buffer);
-              port.postMessage({id: msg.id, data: {inputs: inputs, outputs: outputs, token: hashed, description: msg.description}});
+              var token = new Uint8Array(36);
+              token.set(new Uint8Array(new Uint32Array([msg.expiry]).buffer), 0)
+              token.set(hashed, 4)
+
+              port.postMessage({id: msg.id, data: {inputs: inputs, outputs: outputs, token: token, description: msg.description}});
            }
           }
         });

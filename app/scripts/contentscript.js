@@ -25,8 +25,8 @@ var bitcoin = function() {
       return this;
     }
     Wallet.AUTHORIZATION_DENIED = 101;
-    Wallet.prototype.authorizeAmount = function(amount,timeout,description,successCallback,failureCallback) {
-      msg({command: "walletAuthorizeAmount", amount: amount, timeout: timeout, description: description}, function(data) {
+    Wallet.prototype.authorizeAmount = function(amount,expiry,description,successCallback,failureCallback) {
+      msg({command: "walletAuthorizeAmount", amount: amount, expiry: expiry, description: description}, function(data) {
         if (data.error) {
           failureCallback(data.error);
         } else {
