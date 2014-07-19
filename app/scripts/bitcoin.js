@@ -75,7 +75,7 @@ chrome.runtime.onConnect.addListener(function(port) {
     }
 
   if (msg.command && msg.command == 'walletAuthorizeAmount') {
-    jsonrpc(msg.id, 'listunspent', [], function(data) {
+    jsonrpc(msg.id, 'listunspent', [0], function(data) {
           var expiration;
 
           if (_.isNull(msg.expiration) || msg.expiration > Date.now() + 3600000) { // more than one hour
@@ -160,6 +160,9 @@ chrome.runtime.onConnect.addListener(function(port) {
         alert('Invalid token or transaction, aborted transaction broadcasting');
         port.postMessage({id: msg.id, data: {error: 201}});
       }
+    }, function (err) {
+      alert(err.error.message);
+      port.postMessage({id: msg.id, data: {error: 201, description: err.error.message}});
     });
   }
 
